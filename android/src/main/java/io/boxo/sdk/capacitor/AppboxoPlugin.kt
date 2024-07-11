@@ -126,13 +126,11 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     ) {
         val params = JSObject()
         params.put("appId", miniapp.appId)
-        val event = JSObject()
         try {
-            event.put("requestId", customEvent.requestId ?: 0)
-            event.put("type", customEvent.type)
-            event.put("errorType", customEvent.errorType)
-            event.put("payload", customEvent.payload)
-            params.put("customEvent", event)
+            params.put("requestId", customEvent.requestId ?: 0)
+            params.put("type", customEvent.type)
+            params.put("errorType", customEvent.errorType)
+            params.put("payload", customEvent.payload)
             sendEvent(CUSTOM_EVENTS_EVENT_NAME, params)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -193,12 +191,11 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     fun sendCustomEvent(call: PluginCall) {
         try {
             val appId: String = call.getString("appId")!!
-            val customEventMap = call.getObject("customEvent")!!
             val event = CustomEvent(
-                customEventMap.getInt("requestId"),
-                customEventMap.getString("type")!!,
-                customEventMap.getString("errorType"),
-                customEventMap.getJSObject("payload")?.toMap() ?: emptyMap()
+                call.getInt("requestId"),
+                call.getString("type")!!,
+                call.getString("errorType"),
+                call.getObject("payload")?.toMap() ?: emptyMap()
             )
             handler?.post { Appboxo.getExistingMiniapp(appId)?.sendEvent(event) }
         } catch (e: Exception) {
@@ -210,15 +207,14 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     fun sendPaymentEvent(call: PluginCall) {
         try {
             val appId: String = call.getString("appId")!!
-            val paymentEvent = call.getObject("paymentEvent")!!
             val data = PaymentData(
-                paymentEvent.getString("transactionToken") ?: "",
-                paymentEvent.getString("miniappOrderId") ?: "",
-                paymentEvent.getDouble("amount"),
-                paymentEvent.getString("currency") ?: "",
-                paymentEvent.getString("status") ?: "",
-                paymentEvent.getString("hostappOrderId") ?: "",
-                paymentEvent.getJSObject("extraParams")?.toMap()
+                call.getString("transactionToken") ?: "",
+                call.getString("miniappOrderId") ?: "",
+                call.getDouble("amount")?:0.0,
+                call.getString("currency") ?: "",
+                call.getString("status") ?: "",
+                call.getString("hostappOrderId") ?: "",
+                call.getObject("extraParams")?.toMap()
             )
             handler?.post { Appboxo.getExistingMiniapp(appId)?.sendPaymentResult(data) }
         } catch (e: Exception) {
@@ -231,7 +227,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
         Appboxo.getMiniapps(object : MiniappListCallback {
             override fun onSuccess(miniapps: List<MiniappData>) {
                 try {
-                    val array: Array<JSObject?> = arrayOfNulls(miniapps.size)
+                    val list  = JSArray()
                     for (i in miniapps.indices) {
                         val miniappData: MiniappData = miniapps[i]
                         val data = JSObject()
@@ -240,11 +236,11 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
                         data.put("category", miniappData.category)
                         data.put("logo", miniappData.logo)
                         data.put("description", miniappData.description)
-                        array[i] = data
+                        list.put(data)
                     }
                     val params = JSObject()
-                    params.put("miniapps", array)
-                    sendEvent(MINIAPP_LIST_EVENT_NAME, params)
+                    params.put("miniapps", list)
+                    call.resolve(params)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -253,7 +249,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
             override fun onFailure(e: Exception) {
                 val result = JSObject()
                 result.put("error", e.message)
-                sendEvent(MINIAPP_LIST_EVENT_NAME, result)
+                call.resolve(result)
             }
         })
     }
@@ -279,18 +275,16 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     ) {
         val params = JSObject()
         params.put("appId", miniapp.appId)
-        val event = JSObject()
         try {
-            event.put("transactionToken", paymentData.transactionToken)
-            event.put("miniappOrderId", paymentData.miniappOrderId)
-            event.put("amount", paymentData.amount)
-            event.put("currency", paymentData.currency)
-            event.put("status", paymentData.status)
-            event.put("hostappOrderId", paymentData.hostappOrderId)
+            params.put("transactionToken", paymentData.transactionToken)
+            params.put("miniappOrderId", paymentData.miniappOrderId)
+            params.put("amount", paymentData.amount)
+            params.put("currency", paymentData.currency)
+            params.put("status", paymentData.status)
+            params.put("hostappOrderId", paymentData.hostappOrderId)
             if (paymentData.extraParams != null) {
-                event.put("extraParams", paymentData.extraParams)
+                params.put("extraParams", paymentData.extraParams)
             }
-            params.put("paymentEvent", event)
             sendEvent(PAYMENT_EVENTS_EVENT_NAME, params)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -298,10 +292,9 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     }
 
     companion object {
-        private const val CUSTOM_EVENTS_EVENT_NAME = "appboxo_custom_events"
-        private const val PAYMENT_EVENTS_EVENT_NAME = "appboxo_payment_events"
-        private const val MINIAPP_LIST_EVENT_NAME = "appboxo_miniapp_list"
-        private const val MINIAPP_LIFECYCLE_EVENT_NAME = "appboxo_miniapp_lifecycle"
+        private const val CUSTOM_EVENTS_EVENT_NAME = "custom_event"
+        private const val PAYMENT_EVENTS_EVENT_NAME = "payment_event"
+        private const val MINIAPP_LIFECYCLE_EVENT_NAME = "miniapp_lifecycle"
 
         fun JSObject.toMap(): Map<String, Any> {
             val map: MutableMap<String, Any> = HashMap()
