@@ -1,0 +1,326 @@
+package io.boxo.sdk.capacitor
+
+import android.os.Handler
+import android.os.Looper
+import com.appboxo.data.models.MiniappData
+import com.appboxo.js.params.CustomEvent
+import com.appboxo.js.params.PaymentData
+import com.appboxo.sdk.Appboxo
+import com.appboxo.sdk.Config
+import com.appboxo.sdk.Miniapp
+import com.appboxo.sdk.MiniappConfig
+import com.appboxo.sdk.MiniappListCallback
+import com.appboxo.ui.main.AppboxoActivity
+import com.getcapacitor.JSArray
+import com.getcapacitor.JSObject
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+
+@CapacitorPlugin(name = "Appboxo")
+class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
+    Miniapp.CustomEventListener, Miniapp.AuthListener,
+    Miniapp.PaymentEventListener{
+
+    private var handler: Handler? = null
+
+    override fun load() {
+        super.load()
+        Appboxo.init(bridge.activity.application)
+        handler = Handler(Looper.getMainLooper())
+    }
+
+    @PluginMethod
+    fun setConfig(call: PluginCall) {
+        val clientId = call.getString("clientId")!!
+        val userId = call.getString("userId")?:""
+        val sandboxMode = call.getBoolean("sandboxMde", false)!!
+        val enableMultitaskMode = call.getBoolean("enableMultitaskMode", false)!!
+        val theme = call.getString("theme", "system")!!
+        val isDebug = call.getBoolean("isDebug", false)!!
+        val showPermissionsPage = call.getBoolean("showPermissionsPage", true)!!
+        val showClearCache = call.getBoolean("showClearCache", true)!!
+        val globalTheme: Config.Theme = when (theme) {
+            "light" -> Config.Theme.LIGHT
+            "dark" -> Config.Theme.DARK
+            else -> Config.Theme.SYSTEM
+        }
+        Appboxo
+            .setConfig(
+                Config.Builder()
+                    .setClientId(clientId)
+                    .setUserId(userId)
+                    .sandboxMode(sandboxMode)
+                    .multitaskMode(enableMultitaskMode)
+                    .setTheme(globalTheme)
+                    .permissionsPage(showPermissionsPage)
+                    .showClearCache(showClearCache)
+                    .debug(isDebug)
+                    .build()
+            )
+    }
+
+    @PluginMethod
+    fun openMiniapp(call: PluginCall) {
+        val appId = call.getString("appId")!!
+        val data = call.getObject("data")
+        val theme = call.getString("theme")
+        val extraUrlParams = call.getObject("extraUrlParams")
+        val urlSuffix = call.getString("urlSuffix")
+        val colors = call.getObject("colors")
+        val miniapp: Miniapp = Appboxo.getMiniapp(appId)
+            .setCustomEventListener(this)
+            .setPaymentEventListener(this)
+            .setAuthListener(this)
+            .setLifecycleListener(this)
+        if (data != null) miniapp.setData(data.toMap())
+        val configBuilder = MiniappConfig.Builder()
+        if (theme != null) {
+            val miniappTheme: Config.Theme? = when (theme) {
+                "light" -> Config.Theme.LIGHT
+                "dark" -> Config.Theme.DARK
+                "system" -> Config.Theme.SYSTEM
+                else -> null
+            }
+            if (miniappTheme != null) {
+                configBuilder.setTheme(miniappTheme)
+            }
+        }
+        if (extraUrlParams != null) {
+            val map: Map<String, Any> = extraUrlParams.toMap()
+            val stringMap: MutableMap<String, String> = HashMap()
+            for ((key, value) in map) stringMap[key] = value.toString()
+            configBuilder.setExtraUrlParams(stringMap)
+        }
+        urlSuffix?.also { suffix -> configBuilder.setUrlSuffix(suffix) }
+        if (colors != null) {
+            configBuilder.setColors(
+                colors.getString("primaryColor") ?: "",
+                colors.getString("secondaryColor") ?: "",
+                colors.getString("tertiaryColor") ?: "",
+            )
+        }
+        miniapp.setConfig(configBuilder.build())
+        miniapp.open(bridge.activity)
+    }
+
+    @PluginMethod
+    fun setAuthCode(call: PluginCall) {
+        val appId = call.getString("appId")!!
+        val authCode = call.getString("authCode")!!
+        Appboxo.getMiniapp(appId)
+            .setAuthCode(authCode)
+    }
+
+    @PluginMethod
+    fun closeMiniapp(call: PluginCall) {
+        val appId = call.getString("appId")!!
+        handler?.post { Appboxo.getExistingMiniapp(appId)?.close() }
+    }
+
+    override fun handle(
+        miniAppActivity: AppboxoActivity,
+        miniapp: Miniapp,
+        customEvent: CustomEvent
+    ) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        val event = JSObject()
+        try {
+            event.put("requestId", customEvent.requestId ?: 0)
+            event.put("type", customEvent.type)
+            event.put("errorType", customEvent.errorType)
+            event.put("payload", customEvent.payload)
+            params.put("customEvent", event)
+            sendEvent(CUSTOM_EVENTS_EVENT_NAME, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onLaunch(miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onLaunch")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onResume(miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onResume")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onPause(miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onPause")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onClose(miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onClose")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onError(miniapp: Miniapp, message: String) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onError")
+        params.put("error", message)
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onUserInteraction(miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onUserInteraction")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    override fun onAuth(appboxoActivity: AppboxoActivity, miniapp: Miniapp) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        params.put("lifecycle", "onAuth")
+        sendEvent(MINIAPP_LIFECYCLE_EVENT_NAME, params)
+    }
+
+    @PluginMethod
+    fun sendCustomEvent(call: PluginCall) {
+        try {
+            val appId: String = call.getString("appId")!!
+            val customEventMap = call.getObject("customEvent")!!
+            val event = CustomEvent(
+                customEventMap.getInt("requestId"),
+                customEventMap.getString("type")!!,
+                customEventMap.getString("errorType"),
+                customEventMap.getJSObject("payload")?.toMap() ?: emptyMap()
+            )
+            handler?.post { Appboxo.getExistingMiniapp(appId)?.sendEvent(event) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @PluginMethod
+    fun sendPaymentEvent(call: PluginCall) {
+        try {
+            val appId: String = call.getString("appId")!!
+            val paymentEvent = call.getObject("paymentEvent")!!
+            val data = PaymentData(
+                paymentEvent.getString("transactionToken") ?: "",
+                paymentEvent.getString("miniappOrderId") ?: "",
+                paymentEvent.getDouble("amount"),
+                paymentEvent.getString("currency") ?: "",
+                paymentEvent.getString("status") ?: "",
+                paymentEvent.getString("hostappOrderId") ?: "",
+                paymentEvent.getJSObject("extraParams")?.toMap()
+            )
+            handler?.post { Appboxo.getExistingMiniapp(appId)?.sendPaymentResult(data) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    @PluginMethod
+    fun getMiniapps(call: PluginCall) {
+        Appboxo.getMiniapps(object : MiniappListCallback {
+            override fun onSuccess(miniapps: List<MiniappData>) {
+                try {
+                    val array: Array<JSObject?> = arrayOfNulls(miniapps.size)
+                    for (i in miniapps.indices) {
+                        val miniappData: MiniappData = miniapps[i]
+                        val data = JSObject()
+                        data.put("appId", miniappData.appId)
+                        data.put("name", miniappData.name)
+                        data.put("category", miniappData.category)
+                        data.put("logo", miniappData.logo)
+                        data.put("description", miniappData.description)
+                        array[i] = data
+                    }
+                    val params = JSObject()
+                    params.put("miniapps", array)
+                    sendEvent(MINIAPP_LIST_EVENT_NAME, params)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            override fun onFailure(e: Exception) {
+                val result = JSObject()
+                result.put("error", e.message)
+                sendEvent(MINIAPP_LIST_EVENT_NAME, result)
+            }
+        })
+    }
+
+    @PluginMethod
+    fun hideMiniapps() {
+        Appboxo.hideMiniapps()
+    }
+
+    @PluginMethod
+    fun logout() {
+        Appboxo.logout()
+    }
+
+    private fun sendEvent(name: String, data: JSObject) {
+        notifyListeners(name, data)
+    }
+
+    override fun handle(
+        miniAppActivity: AppboxoActivity,
+        miniapp: Miniapp,
+        paymentData: PaymentData
+    ) {
+        val params = JSObject()
+        params.put("appId", miniapp.appId)
+        val event = JSObject()
+        try {
+            event.put("transactionToken", paymentData.transactionToken)
+            event.put("miniappOrderId", paymentData.miniappOrderId)
+            event.put("amount", paymentData.amount)
+            event.put("currency", paymentData.currency)
+            event.put("status", paymentData.status)
+            event.put("hostappOrderId", paymentData.hostappOrderId)
+            if (paymentData.extraParams != null) {
+                event.put("extraParams", paymentData.extraParams)
+            }
+            params.put("paymentEvent", event)
+            sendEvent(PAYMENT_EVENTS_EVENT_NAME, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    companion object {
+        private const val CUSTOM_EVENTS_EVENT_NAME = "appboxo_custom_events"
+        private const val PAYMENT_EVENTS_EVENT_NAME = "appboxo_payment_events"
+        private const val MINIAPP_LIST_EVENT_NAME = "appboxo_miniapp_list"
+        private const val MINIAPP_LIFECYCLE_EVENT_NAME = "appboxo_miniapp_lifecycle"
+
+        fun JSObject.toMap(): Map<String, Any> {
+            val map: MutableMap<String, Any> = HashMap()
+            val iterator: Iterator<String> = this.keys()
+
+            while (iterator.hasNext()) {
+                val key = iterator.next()
+                var value: Any = this.get(key)
+
+                if (value is JSObject) {
+                    value = value.toMap()
+                }
+                if (value is JSArray) {
+                    value = value.toList<Any>()
+                }
+                map[key] = value
+            }
+
+            return map
+        }
+    }
+}
