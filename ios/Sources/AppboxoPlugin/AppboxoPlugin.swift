@@ -58,12 +58,16 @@ public class AppboxoPlugin: CAPPlugin, CAPBridgedPlugin {
         let theme = call.getString("theme")
         let extraUrlParams = call.getObject("extraUrlParams")?.toMap() ?? nil
         let colors = call.getObject("colors")?.toMap() ?? nil
+        let enableSplash = call.getBool("enableSplash")
 
         let miniApp = Appboxo.shared.getMiniapp(appId: appId)
         miniApp.setData(data: data)
         miniApp.delegate = self
 
         let miniappConfig = MiniappConfig()
+        if let enableSplash = enableSplash {
+            miniappConfig.enableSplash(isSplashEnabled: enableSplash)
+        }
 
         if let theme = theme {
             switch theme {
