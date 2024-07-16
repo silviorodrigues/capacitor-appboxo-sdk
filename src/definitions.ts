@@ -30,6 +30,7 @@ export interface OpenMiniappOptions{
   extraUrlParams?: object;
   urlSuffix?: string;
   colors?: ColorOptions;
+  enableSplash?: boolean;
 }
 
 export interface ColorOptions{

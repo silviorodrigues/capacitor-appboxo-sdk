@@ -21,7 +21,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 @CapacitorPlugin(name = "Appboxo")
 class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     Miniapp.CustomEventListener, Miniapp.AuthListener,
-    Miniapp.PaymentEventListener{
+    Miniapp.PaymentEventListener {
 
     private var handler: Handler? = null
 
@@ -34,7 +34,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     @PluginMethod
     fun setConfig(call: PluginCall) {
         val clientId = call.getString("clientId")!!
-        val userId = call.getString("userId")?:""
+        val userId = call.getString("userId") ?: ""
         val sandboxMode = call.getBoolean("sandboxMde", false)!!
         val enableMultitaskMode = call.getBoolean("enableMultitaskMode", false)!!
         val theme = call.getString("theme", "system")!!
@@ -69,6 +69,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
         val extraUrlParams = call.getObject("extraUrlParams")
         val urlSuffix = call.getString("urlSuffix")
         val colors = call.getObject("colors")
+        val enableSplash = call.getBoolean("enableSplash")
         val miniapp: Miniapp = Appboxo.getMiniapp(appId)
             .setCustomEventListener(this)
             .setPaymentEventListener(this)
@@ -101,6 +102,8 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
                 colors.getString("tertiaryColor") ?: "",
             )
         }
+        if (enableSplash != null)
+            configBuilder.enableSplash(enableSplash)
         miniapp.setConfig(configBuilder.build())
         miniapp.open(bridge.activity)
     }
@@ -210,7 +213,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
             val data = PaymentData(
                 call.getString("transactionToken") ?: "",
                 call.getString("miniappOrderId") ?: "",
-                call.getDouble("amount")?:0.0,
+                call.getDouble("amount") ?: 0.0,
                 call.getString("currency") ?: "",
                 call.getString("status") ?: "",
                 call.getString("hostappOrderId") ?: "",
@@ -227,7 +230,7 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
         Appboxo.getMiniapps(object : MiniappListCallback {
             override fun onSuccess(miniapps: List<MiniappData>) {
                 try {
-                    val list  = JSArray()
+                    val list = JSArray()
                     for (i in miniapps.indices) {
                         val miniappData: MiniappData = miniapps[i]
                         val data = JSObject()

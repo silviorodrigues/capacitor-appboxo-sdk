@@ -163,6 +163,7 @@ logout() => Promise<void>
 | **`extraUrlParams`** | <code>object</code>                                   |
 | **`urlSuffix`**      | <code>string</code>                                   |
 | **`colors`**         | <code><a href="#coloroptions">ColorOptions</a></code> |
+| **`enableSplash`**   | <code>boolean</code>                                  |
 
 
 #### ColorOptions
