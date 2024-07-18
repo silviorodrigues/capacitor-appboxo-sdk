@@ -258,12 +258,12 @@ class AppboxoPlugin : Plugin(), Miniapp.LifecycleListener,
     }
 
     @PluginMethod
-    fun hideMiniapps() {
+    fun hideMiniapps(call: PluginCall) {
         Appboxo.hideMiniapps()
     }
 
     @PluginMethod
-    fun logout() {
+    fun logout(call: PluginCall) {
         Appboxo.logout()
     }
 
