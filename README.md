@@ -35,6 +35,8 @@ npx cap sync
 setConfig(options: ConfigOptions) => Promise<void>
 ```
 
+Set global configs
+
 | Param         | Type                                                    |
 | ------------- | ------------------------------------------------------- |
 | **`options`** | <code><a href="#configoptions">ConfigOptions</a></code> |
@@ -47,6 +49,8 @@ setConfig(options: ConfigOptions) => Promise<void>
 ```typescript
 openMiniapp(options: OpenMiniappOptions) => Promise<void>
 ```
+
+Open miniapp with options
 
 | Param         | Type                                                              |
 | ------------- | ----------------------------------------------------------------- |
@@ -61,6 +65,8 @@ openMiniapp(options: OpenMiniappOptions) => Promise<void>
 setAuthCode(options: { appId: string; authCode: string; }) => Promise<void>
 ```
 
+get AuthCode from hostapp backend and send it to miniapp
+
 | Param         | Type                                              |
 | ------------- | ------------------------------------------------- |
 | **`options`** | <code>{ appId: string; authCode: string; }</code> |
@@ -73,6 +79,8 @@ setAuthCode(options: { appId: string; authCode: string; }) => Promise<void>
 ```typescript
 closeMiniapp(options: { appId: string; }) => Promise<void>
 ```
+
+close miniapp by appId
 
 | Param         | Type                            |
 | ------------- | ------------------------------- |
@@ -87,6 +95,8 @@ closeMiniapp(options: { appId: string; }) => Promise<void>
 sendCustomEvent(customEvent: CustomEvent) => Promise<void>
 ```
 
+send custom event to miniapp
+
 | Param             | Type                                                |
 | ----------------- | --------------------------------------------------- |
 | **`customEvent`** | <code><a href="#customevent">CustomEvent</a></code> |
@@ -99,6 +109,8 @@ sendCustomEvent(customEvent: CustomEvent) => Promise<void>
 ```typescript
 sendPaymentEvent(paymentEvent: PaymentEvent) => Promise<void>
 ```
+
+send payment event to miniapp
 
 | Param              | Type                                                  |
 | ------------------ | ----------------------------------------------------- |
@@ -113,6 +125,8 @@ sendPaymentEvent(paymentEvent: PaymentEvent) => Promise<void>
 getMiniapps() => Promise<MiniappListResult>
 ```
 
+Get list of miniapps
+
 **Returns:** <code>Promise&lt;<a href="#miniapplistresult">MiniappListResult</a>&gt;</code>
 
 --------------------
@@ -124,6 +138,9 @@ getMiniapps() => Promise<MiniappListResult>
 hideMiniapps() => Promise<void>
 ```
 
+Miniapp opens on a native screen. To show payment processing page need to hide miniapp screen.
+To use this function need to enable 'enableMultitaskMode: true' in Appboxo.setConfigs()
+
 --------------------
 
 
@@ -133,6 +150,8 @@ hideMiniapps() => Promise<void>
 logout() => Promise<void>
 ```
 
+When host app user logs out, it is highly important to clear all miniapp storage data.
+
 --------------------
 
 
@@ -141,29 +160,29 @@ logout() => Promise<void>
 
 #### ConfigOptions
 
-| Prop                      | Type                                       |
-| ------------------------- | ------------------------------------------ |
-| **`clientId`**            | <code>string</code>                        |
-| **`userId`**              | <code>string</code>                        |
-| **`sandboxMode`**         | <code>boolean</code>                       |
-| **`enableMultitaskMode`** | <code>boolean</code>                       |
-| **`theme`**               | <code>'light' \| 'dark' \| 'system'</code> |
-| **`isDebug`**             | <code>boolean</code>                       |
-| **`showPermissionsPage`** | <code>boolean</code>                       |
-| **`showClearCache`**      | <code>boolean</code>                       |
+| Prop                      | Type                                       | Description                                                                              |
+| ------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| **`clientId`**            | <code>string</code>                        | your client id from dashboard                                                            |
+| **`userId`**              | <code>string</code>                        | hostapp userId, will be used for the Consent Management                                  |
+| **`sandboxMode`**         | <code>boolean</code>                       | switch to sandbox mode                                                                   |
+| **`enableMultitaskMode`** | <code>boolean</code>                       | Each miniapp appears as a task in the Recents screen. !It works only on android devices. |
+| **`theme`**               | <code>'light' \| 'dark' \| 'system'</code> | theme for splash screen and other native components used inside miniapp.                 |
+| **`isDebug`**             | <code>boolean</code>                       | enables webview debugging                                                                |
+| **`showPermissionsPage`** | <code>boolean</code>                       | use it to hide "Settings" from Miniapp menu                                              |
+| **`showClearCache`**      | <code>boolean</code>                       | use it to hide "Clear cache" from Miniapp menu                                           |
 
 
 #### OpenMiniappOptions
 
-| Prop                 | Type                                                  |
-| -------------------- | ----------------------------------------------------- |
-| **`appId`**          | <code>string</code>                                   |
-| **`data`**           | <code>object</code>                                   |
-| **`theme`**          | <code>'light' \| 'dark' \| 'system'</code>            |
-| **`extraUrlParams`** | <code>object</code>                                   |
-| **`urlSuffix`**      | <code>string</code>                                   |
-| **`colors`**         | <code><a href="#coloroptions">ColorOptions</a></code> |
-| **`enableSplash`**   | <code>boolean</code>                                  |
+| Prop                 | Type                                                  | Description                                                                                       |
+| -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **`appId`**          | <code>string</code>                                   | miniapp id                                                                                        |
+| **`data`**           | <code>object</code>                                   | (optional) data as Map that is sent to miniapp                                                    |
+| **`theme`**          | <code>'light' \| 'dark' \| 'system'</code>            | (optional) miniapp theme "dark" \| "light" (by default is system theme)                           |
+| **`extraUrlParams`** | <code>object</code>                                   | (optional) extra query params to append to miniapp URL (like: http://miniapp-url.com/?param=test) |
+| **`urlSuffix`**      | <code>string</code>                                   | (optional) suffix to append to miniapp URL (like: http://miniapp-url.com/?param=test)             |
+| **`colors`**         | <code><a href="#coloroptions">ColorOptions</a></code> | (optional) provide colors to miniapp if miniapp supports                                          |
+| **`enableSplash`**   | <code>boolean</code>                                  | (optional) use to skip miniapp splash screen                                                      |
 
 
 #### ColorOptions

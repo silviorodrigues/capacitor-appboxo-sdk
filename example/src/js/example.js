@@ -1,6 +1,6 @@
 import { Appboxo } from 'capacitor-boxo-sdk';
 
-Appboxo.setConfig({ clientId: 'CLIENT_ID' });
+Appboxo.setConfig({ clientId: 'CLIENT_ID', enableMultitaskMode: true });
 
 Appboxo.addListener('custom_event', (customEvent) => {
     console.log('custom_event app_id='+customEvent.appId);
