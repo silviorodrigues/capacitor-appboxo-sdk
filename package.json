@@ -1,5 +1,5 @@
 {
-  "name": "capacitor-boxo-sdk",
+  "name": "@appboxo/capacitor-boxo-sdk",
   "version": "0.0.1",
   "description": "A capacitor wrapper over Appboxo SDK for IOS and Android.",
   "main": "dist/plugin.cjs.js",
