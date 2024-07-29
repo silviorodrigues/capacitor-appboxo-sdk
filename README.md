@@ -5,7 +5,7 @@ A Capacitor wrapper over Appboxo SDK for IOS and Android.
 ## Install
 
 ```bash
-npm install capacitor-boxo-sdk
+npm install @appboxo/capacitor-boxo-sdk
 npx cap sync
 ```
 
