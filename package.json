@@ -13,7 +13,7 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CapacitorBoxoSdk.podspec"
+    "AppboxoCapacitorBoxoSdk.podspec"
   ],
   "author": "Appboxo pte. ltd",
   "license": "MIT",
@@ -31,7 +31,7 @@
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "xcodebuild -scheme CapacitorBoxoSdk -destination generic/platform=iOS",
+    "verify:ios": "xcodebuild -scheme AppboxoCapacitorBoxoSdk -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
@@ -46,10 +46,10 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@capacitor/android": "^5.7.7",
-    "@capacitor/core": "^5.7.7",
+    "@capacitor/android": "^5.2.2",
+    "@capacitor/core": "^5.2.2",
     "@capacitor/docgen": "^0.2.2",
-    "@capacitor/ios": "^5.7.7",
+    "@capacitor/ios": "^5.2.2",
     "@ionic/eslint-config": "^0.4.0",
     "@ionic/prettier-config": "^1.0.1",
     "@ionic/swiftlint-config": "^1.1.2",
@@ -62,7 +62,7 @@
     "typescript": "~4.1.5"
   },
   "peerDependencies": {
-    "@capacitor/core": "^5.7.7"
+    "@capacitor/core": "^5.2.2"
   },
   "prettier": "@ionic/prettier-config",
   "swiftlint": "@ionic/swiftlint-config",
